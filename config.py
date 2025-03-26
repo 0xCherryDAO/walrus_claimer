@@ -1,0 +1,20 @@
+MOBILE_PROXY = False
+ROTATE_IP = False
+
+SHUFFLE_WALLETS = False
+
+SUI_RPC = 'https://sui-rpc.publicnode.com'
+
+PAUSE_BETWEEN_WALLETS = [1, 2]
+PAUSE_BETWEEN_MODULES = [1, 2]
+
+CLAIM = False
+TRANSFER = False
+
+MOVE_CALL_PACKAGE = '0x98af8b8fde88f3c4bdf0fcedcf9afee7d10f66d480b74fb5a3a2e23dc7f5a564'
+MOVE_CALL_MODULE = 'airdrop'
+MOVE_CALL_FUNCTION = 'withdraw'
+
+WAL_TOKEN_TYPE = '0x356a26eb9e012a68958082340d4c4116e7f55615cf27affcff209cf0ae544f59::wal::WAL'
+
+# WALRUS PACKAGE  0x98af8b8fde88f3c4bdf0fcedcf9afee7d10f66d480b74fb5a3a2e23dc7f5a564
