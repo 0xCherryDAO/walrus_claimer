@@ -73,14 +73,12 @@ class SuiAccount:
             logger.error(f'[{self.wallet_address}] | SUI balance is 0')
             return None
 
-        while True:
-            wal_balance, coin_object_id = await self.get_balance(
-                WAL_TOKEN_TYPE
-            )
-            if wal_balance == 0:
-                logger.error(f'[{self.wallet_address}] | WAL balance is 0')
-                continue
-            break
+        wal_balance, coin_object_id = await self.get_balance(
+            WAL_TOKEN_TYPE
+        )
+        if wal_balance == 0:
+            logger.error(f'[{self.wallet_address}] | WAL balance is 0')
+            return None
 
         tx = SuiTransactionAsync(client=self.client)
 

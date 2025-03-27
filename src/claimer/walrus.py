@@ -5,7 +5,6 @@ from loguru import logger
 
 from pysui.sui.sui_txn.async_transaction import SuiTransactionAsync
 from pysui.sui.sui_types import SuiString
-from pysui import SuiAddress
 
 from config import MOVE_CALL_PACKAGE, MOVE_CALL_FUNCTION, MOVE_CALL_MODULE
 from src.utils.proxy_manager import Proxy
@@ -43,13 +42,13 @@ class Walrus(SuiAccount, RequestClient):
         if not nft_object_id:
             return None
 
+        nft_data = await self.client.get_object(nft_object_id)
+        nft_object = nft_data.result_data
+        locked_data = await self.client.get_object(nft_object.content.fields['locked_id'])
+        locked_object = locked_data.result_data
+
         while True:
             try:
-                nft_data = await self.client.get_object(nft_object_id)
-                nft_object = nft_data.result_data
-                locked_data = await self.client.get_object(nft_object.content.fields['locked_id'])
-                locked_object = locked_data.result_data
-                # print(nft_object)
                 airdrop_config_data = await self.client.get_object(
                     '0x194ddb7dcc480aabc981d976c6327a7bb610de0d7aa6e2c29783cf9d59da7bb3'
                 )
@@ -58,7 +57,7 @@ class Walrus(SuiAccount, RequestClient):
                     '0x0000000000000000000000000000000000000000000000000000000000000006'
                 )
 
-                unwrap_result = await tx.move_call(
+                await tx.move_call(
                     target=SuiString(f"{MOVE_CALL_PACKAGE}::{MOVE_CALL_MODULE}::{MOVE_CALL_FUNCTION}"),
                     arguments=[
                         nft_object,
@@ -67,13 +66,9 @@ class Walrus(SuiAccount, RequestClient):
                         clock_data.result_data
                     ]
                 )
-                await tx.transfer_objects(
-                    transfers=[unwrap_result],
-                    recipient=self.wallet_address,
-                )
                 simulation_status = await self.simulate_tx(tx)
                 if simulation_status is False:
-                    continue
+                    return False
 
                 status, digest = await self.send_tx(tx)
                 if status is True:
