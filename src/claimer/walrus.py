@@ -39,28 +39,25 @@ class Walrus(SuiAccount, RequestClient):
         logger.warning(f'[{self.wallet_address}] | Не удалось найти NFT на кошельке')
 
     async def claim_tokens(self) -> Optional[bool]:
-        nft_object = await self._get_nft_object_id()
-        if not nft_object:
+        nft_object_id = await self._get_nft_object_id()
+        if not nft_object_id:
             return None
 
-        tx = SuiTransactionAsync(client=self.client)
-
-        nft_data = await self.client.get_object(nft_object)
-        nft_object = nft_data.result_data
-        # print(nft_object)
-
-        locked_data = await self.client.get_object(nft_object.content.fields['locked_id'])
-        locked_object = locked_data.result_data
-
-        airdrop_config_data = await self.client.get_object(
-            '0x194ddb7dcc480aabc981d976c6327a7bb610de0d7aa6e2c29783cf9d59da7bb3'
-        )
-
         while True:
-            clock_data = await self.client.get_object(
-                '0x0000000000000000000000000000000000000000000000000000000000000006'
-            )
             try:
+                nft_data = await self.client.get_object(nft_object_id)
+                nft_object = nft_data.result_data
+                locked_data = await self.client.get_object(nft_object.content.fields['locked_id'])
+                locked_object = locked_data.result_data
+                # print(nft_object)
+                airdrop_config_data = await self.client.get_object(
+                    '0x194ddb7dcc480aabc981d976c6327a7bb610de0d7aa6e2c29783cf9d59da7bb3'
+                )
+                tx = SuiTransactionAsync(client=self.client)
+                clock_data = await self.client.get_object(
+                    '0x0000000000000000000000000000000000000000000000000000000000000006'
+                )
+
                 unwrap_result = await tx.move_call(
                     target=SuiString(f"{MOVE_CALL_PACKAGE}::{MOVE_CALL_MODULE}::{MOVE_CALL_FUNCTION}"),
                     arguments=[
@@ -74,12 +71,20 @@ class Walrus(SuiAccount, RequestClient):
                     transfers=[unwrap_result],
                     recipient=self.wallet_address,
                 )
+                simulation_status = await self.simulate_tx(tx)
+                if simulation_status is False:
+                    continue
 
-                status, err_msg = await self.send_tx(tx)
+                status, digest = await self.send_tx(tx)
                 if status is True:
-                    logger.success(f'[{self.wallet_address}] | Successfully claimed tokens')
+                    logger.success(
+                        f'[{self.wallet_address}] | Successfully claimed tokens '
+                        f'| TX: https://suivision.xyz/txblock/{digest}'
+                    )
                     return True
-                logger.error(f'[{self.wallet_address}] | Failed to claim tokens | {err_msg}')
+                logger.error(
+                    f'[{self.wallet_address}] | Failed to claim tokens | TX: https://suivision.xyz/txblock/{digest}'
+                )
                 await sleep(0.1)
             except Exception as ex:
                 print(ex)
